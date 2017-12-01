@@ -10,7 +10,9 @@ fn run() -> Result<(), Error>
     io::stdin().read_line(&mut input)?;
 
     let nums: Vec<u32> = input.chars().flat_map(|c| c.to_digit(10)).collect();
-    let pairs = nums.iter().zip(nums.iter().cycle().skip(1));
+    ensure!(nums.len() % 2 == 0, "Must be even number of nummbers in input");
+    let skip_length = nums.len() / 2;
+    let pairs = nums.iter().zip(nums.iter().cycle().skip(skip_length));
     let equal_pairs = pairs.filter(|&(a, b)| a == b);
 
     let result: u32 = equal_pairs.map(|(a,_b)| a).sum();
@@ -31,5 +33,3 @@ fn main() {
         }
     }
 }
-
-
