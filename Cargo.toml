@@ -1,0 +1,6 @@
+[dependencies]
+
+[workspace]
+members = [
+    "day1-1",
+]
