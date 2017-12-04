@@ -4,8 +4,7 @@ use failure::Error;
 
 use std::{io, process};
 
-fn run() -> Result<(), Error>
-{
+fn run() -> Result<(), Error> {
     let mut input = String::new();
     io::stdin().read_line(&mut input)?;
 
@@ -13,7 +12,7 @@ fn run() -> Result<(), Error>
     let pairs = nums.iter().zip(nums.iter().cycle().skip(1));
     let equal_pairs = pairs.filter(|&(a, b)| a == b);
 
-    let result: u32 = equal_pairs.map(|(a,_b)| a).sum();
+    let result: u32 = equal_pairs.map(|(a, _b)| a).sum();
 
     println!("{}", result);
 
@@ -21,7 +20,7 @@ fn run() -> Result<(), Error>
 }
 
 fn main() {
-    match  run() {
+    match run() {
         Ok(()) => process::exit(0),
         Err(error) => {
             for cause in error.causes() {
@@ -31,5 +30,3 @@ fn main() {
         }
     }
 }
-
-
