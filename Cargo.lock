@@ -112,6 +112,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "day3-1"
+version = "0.1.0"
+dependencies = [
+ "assert_cli 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "day4-1"
 version = "0.1.0"
 dependencies = [
