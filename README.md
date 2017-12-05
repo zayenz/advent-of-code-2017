@@ -1,5 +1,7 @@
 # Advent of Code 2017 solutions
 
+[![Build Status](https://travis-ci.org/zayenz/advent-of-code-2017.svg?branch=master)](https://travis-ci.org/zayenz/advent-of-code-2017)
+
 This repository contains solutions to the [Advent of Code 2017](http://adventofcode.com/2017) 
 advent calendar.
 
