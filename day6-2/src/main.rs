@@ -10,10 +10,9 @@ fn read_input() -> Result<Vec<i32>, Error> {
     let mut input: Vec<i32> = Vec::new();
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
-        let mut row: Vec<i32> = line?.split_whitespace()
-            .map(|word| word.parse())
-            .collect::<Result<Vec<i32>, _>>()?;
-        input.append(&mut row);
+        for word in line?.split_whitespace() {
+            input.push(word.parse()?);
+        }
     }
     Ok(input)
 }
