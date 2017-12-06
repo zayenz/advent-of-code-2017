@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate failure;
 use failure::Error;
 
@@ -20,7 +19,7 @@ fn read_input() -> Result<Vec<Vec<String>>, Error> {
     Ok(input)
 }
 
-fn checksum_row(row: &Vec<String>) -> Result<u32, Error> {
+fn checksum_row(row: &[String]) -> Result<u32, Error> {
     let words: HashSet<&String> = HashSet::from_iter(row.iter());
     if words.len() == row.len() {
         Ok(1)

@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate failure;
 use failure::Error;
 
@@ -18,7 +17,7 @@ fn read_input() -> Result<Vec<Vec<u32>>, Error> {
     Ok(input)
 }
 
-fn checksum_row(row: &Vec<u32>) -> Option<u32> {
+fn checksum_row(row: &[u32]) -> Option<u32> {
     let max = row.iter().max()?;
     let min = row.iter().min()?;
     Some(max - min)

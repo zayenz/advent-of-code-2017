@@ -1,10 +1,8 @@
-#[macro_use]
 extern crate failure;
 use failure::Error;
 
 use std::{io, process};
 use std::collections::HashMap;
-use std::iter::FromIterator;
 use std::io::BufRead;
 
 

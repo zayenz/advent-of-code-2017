@@ -1,10 +1,8 @@
-#[macro_use]
 extern crate failure;
 use failure::Error;
 
 use std::{io, process};
 use std::cmp::{max, min};
-use std::io::BufRead;
 
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
@@ -113,7 +111,7 @@ fn run() -> Result<(), Error> {
     let input = read_input()?;
 
     let mut cell = SpiralCell::new();
-    for i in 0..input - 1 {
+    for _ in 0..input - 1 {
         cell = cell.next();
     }
 

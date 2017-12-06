@@ -20,7 +20,7 @@ fn read_input() -> Result<Vec<Vec<u32>>, Error> {
     Ok(input)
 }
 
-fn checksum_row(row: &Vec<u32>) -> Result<u32, Error> {
+fn checksum_row(row: &[u32]) -> Result<u32, Error> {
     for a in row {
         for b in row {
             if a != b {

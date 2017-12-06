@@ -1,10 +1,7 @@
-#[macro_use]
 extern crate failure;
 use failure::Error;
 
 use std::{io, process};
-use std::collections::HashSet;
-use std::iter::FromIterator;
 use std::io::BufRead;
 
 
@@ -30,8 +27,8 @@ fn run() -> Result<(), Error> {
     while 0 <= pc && pc < (program.len() as i32) {
         let jump = program[pc as usize];
         program[pc as usize] = jump + 1;
-        pc = pc + jump;
-        steps = steps + 1;
+        pc += jump;
+        steps += 1;
     }
 
     println!("{}", steps);
