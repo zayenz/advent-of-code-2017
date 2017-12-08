@@ -116,7 +116,7 @@ fn read_input() -> Result<Vec<Instruction>, Error> {
         let line = line?;
         let line = line.trim();
         if !line.is_empty() {
-            input.push(Instruction::from_str(line.as_ref())?)
+            input.push(Instruction::from_str(line)?)
         }
     }
     Ok(input)

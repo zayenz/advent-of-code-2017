@@ -49,7 +49,7 @@ fn read_input() -> Result<HashMap<Node, HashSet<Node>>, Error> {
     for (head, child_names) in input {
         let mut children = HashSet::new();
         for child_name in child_names {
-            children.insert(node_by_name.get(&child_name).unwrap().clone());
+            children.insert(node_by_name[&child_name].clone());
         }
         result.insert(head, children);
     }
@@ -87,7 +87,8 @@ fn check_recursive(root: &Node, tree: &HashMap<Node, HashSet<Node>>) -> i32 {
     }
 
     let all_child_weights: i32 = weights.iter().sum();
-    return root.weight + all_child_weights + adjustment;
+
+    root.weight + all_child_weights + adjustment
 }
 
 fn run() -> Result<(), Error> {
@@ -103,7 +104,7 @@ fn run() -> Result<(), Error> {
 
     for node in tree.keys() {
         if !has_parent.contains(node) {
-            check_recursive(&node, &tree);
+            check_recursive(node, &tree);
             return Ok(());
         }
     }
