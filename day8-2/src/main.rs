@@ -81,7 +81,7 @@ impl FromStr for Instruction {
 
     fn from_str(line: &str) -> Result<Self, Self::Err> {
         let mut words = line.split_whitespace();
-        let mod_reg = words.next().unwrap();
+        let mod_reg = words.next().unwrap().to_string();
         let mod_val = {
             let sign: i32 = {
                 match words.next().unwrap() {
@@ -94,17 +94,11 @@ impl FromStr for Instruction {
             sign * mod_val_base
         };
         words.next(); // "if"
-        let cond_reg = words.next().unwrap();
-        let cond = Comparison::from_str(words.next().unwrap())?;
+        let cond_reg = words.next().unwrap().to_string();
+        let cond = words.next().unwrap().parse()?;
         let cond_val = words.next().unwrap().parse()?;
 
-        Ok(Instruction::new(
-            mod_reg.to_string(),
-            mod_val,
-            cond_reg.to_string(),
-            cond,
-            cond_val,
-        ))
+        Ok(Instruction::new(mod_reg, mod_val, cond_reg, cond, cond_val))
     }
 }
 
@@ -116,7 +110,7 @@ fn read_input() -> Result<Vec<Instruction>, Error> {
         let line = line?;
         let line = line.trim();
         if !line.is_empty() {
-            input.push(Instruction::from_str(line)?)
+            input.push(line.parse()?)
         }
     }
     Ok(input)
