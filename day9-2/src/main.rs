@@ -1,11 +1,9 @@
 #[macro_use]
 extern crate failure;
-use failure::{Error, Fail};
+use failure::Error;
 
 use std::{io, process};
-use std::collections::HashMap;
 use std::io::BufRead;
-use std::str::FromStr;
 use std::iter::Peekable;
 use std::slice::Iter;
 

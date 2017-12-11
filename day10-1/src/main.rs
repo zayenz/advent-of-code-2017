@@ -2,7 +2,6 @@ extern crate failure;
 use failure::Error;
 
 use std::{io, process};
-use std::collections::HashSet;
 use std::io::BufRead;
 
 
@@ -74,11 +73,9 @@ fn run() -> Result<(), Error> {
     let mut memory = Memory::new(length);
 
     let mut position = 0;
-    let mut skip_length = 0;
-    for region_width in region_widths {
-        memory.reverse(position, region_width);
+    for (skip_length, region_width) in region_widths.iter().enumerate() {
+        memory.reverse(position, *region_width);
         position += region_width + skip_length;
-        skip_length += 1;
     }
 
     let hash = memory.hash_value();

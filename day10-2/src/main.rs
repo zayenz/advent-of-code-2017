@@ -2,7 +2,6 @@ extern crate failure;
 use failure::Error;
 
 use std::{io, process};
-use std::collections::HashSet;
 use std::io::BufRead;
 
 
@@ -21,7 +20,6 @@ fn read_input() -> Result<Vec<usize>, Error> {
 }
 
 const DATA_LENGTH: usize = 256;
-const HASH_LENGTH: usize = 256;
 
 #[derive(Copy, Clone)]
 struct Memory {
@@ -71,7 +69,7 @@ fn run() -> Result<(), Error> {
 
     let mut position = 0;
     let mut skip_length = 0;
-    for MAX_LENGTH in 0..64 {
+    for _ in 0..64 {
         for region_width in &region_widths {
             memory.reverse(position, *region_width);
             position += region_width + skip_length;

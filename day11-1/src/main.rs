@@ -3,7 +3,6 @@ extern crate failure;
 use failure::Error;
 
 use std::{io, process};
-use std::collections::HashSet;
 use std::io::BufRead;
 use std::str::FromStr;
 
@@ -51,7 +50,7 @@ fn read_input() -> Result<Vec<Direction>, Error> {
 
 
 
-/// See https://www.redblobgames.com/grids/hexagons/#coordinates-cube for a discussion
+/// See [here](https://www.redblobgames.com/grids/hexagons/#coordinates-cube) for a discussion
 /// on how the hax coordinates work.
 #[derive(Default, Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 struct HexCoordinate {
@@ -66,7 +65,7 @@ impl HexCoordinate {
         HexCoordinate::default()
     }
 
-    /// See https://www.redblobgames.com/grids/hexagons/#distances-cube for motivation
+    /// See [here](https://www.redblobgames.com/grids/hexagons/#distances-cube )for motivation
     /// Equivalently, one could take max of the three components; one of the three parts will
     /// be the sum of the other two by construction.
     fn distance(&self, other: HexCoordinate) -> i32 {
