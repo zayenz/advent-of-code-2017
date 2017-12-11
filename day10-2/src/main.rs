@@ -47,17 +47,13 @@ impl Memory {
     }
 
     fn hash_value(&self) -> String {
-        let mut result = String::default();
-
-        for block in 0..16 {
-            let mut hash = self.contents[block * 16];
-            for offset in 1..16 {
-                hash ^= self.contents[block * 16 + offset];
-            }
-
-            result += &format!("{:02x}", hash);
+        let hash = self.contents.chunks(16).map(|chunk| {
+            chunk.iter().fold(0u8, |a, b| a ^ b)
+        });
+        let mut result = String::new();
+        for hash_part in hash {
+            result += &format!("{:02x}", hash_part);
         }
-
         result
     }
 }
