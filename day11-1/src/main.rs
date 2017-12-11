@@ -14,7 +14,7 @@ enum Direction {
     NorthEast,
     SouthEast,
     SouthWest,
-    South
+    South,
 }
 
 use Direction::*;
@@ -78,7 +78,7 @@ impl HexCoordinate {
     }
 
     fn step(&self, direction: Direction) -> HexCoordinate {
-        match direction  {
+        match direction {
             Direction::North => HexCoordinate {
                 x: self.x,
                 y: self.y + 1,

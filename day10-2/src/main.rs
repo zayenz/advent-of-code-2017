@@ -25,24 +25,25 @@ const HASH_LENGTH: usize = 256;
 
 #[derive(Copy, Clone)]
 struct Memory {
-    contents: [u8; DATA_LENGTH]
+    contents: [u8; DATA_LENGTH],
 }
 
 impl Memory {
     fn new() -> Memory {
-        let mut result = Memory {
-            contents: [0; DATA_LENGTH]
-        };
+        let mut result = Memory { contents: [0; DATA_LENGTH] };
         for i in 0..DATA_LENGTH {
             result.contents[i] = i as u8;
-        };
+        }
         result
     }
 
     fn reverse(&mut self, from: usize, width: usize) {
         if width > 1 {
             for i in 0..(width / 2) {
-                self.contents.swap((from + i) % DATA_LENGTH, (from + width - 1 - i) % DATA_LENGTH);
+                self.contents.swap(
+                    (from + i) % DATA_LENGTH,
+                    (from + width - 1 - i) % DATA_LENGTH,
+                );
             }
         }
     }

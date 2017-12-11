@@ -33,18 +33,21 @@ impl Memory {
         assert!(length <= MAX_LENGTH, "At most MAX_LENGTH is supported");
         let mut result = Memory {
             contents: [0; MAX_LENGTH],
-            length
+            length,
         };
         for i in 0..MAX_LENGTH {
             result.contents[i] = i as u8;
-        };
+        }
         result
     }
 
     fn reverse(&mut self, from: usize, width: usize) {
         if width > 1 {
             for i in 0..(width / 2) {
-                self.contents.swap((from + i) % self.length, (from + width - 1 - i) % self.length);
+                self.contents.swap(
+                    (from + i) % self.length,
+                    (from + width - 1 - i) % self.length,
+                );
             }
         }
     }

@@ -18,13 +18,12 @@ enum Token {
     GarbageEnd,
     Separator,
     Escape,
-    Char(char)
+    Char(char),
 }
 
 use Token::*;
 
-impl Token {
-}
+impl Token {}
 
 impl From<char> for Token {
     fn from(c: char) -> Self {
@@ -74,84 +73,99 @@ struct ParseError {
 
 impl ParseError {
     fn wrong_token<S: Into<String>>(token: Token, message: S) -> ParseError {
-        ParseError { token: Some(token), message: message.into(), }
+        ParseError {
+            token: Some(token),
+            message: message.into(),
+        }
     }
 
     fn end_of_input<S: Into<String>>(message: S) -> ParseError {
-        ParseError { token: None, message: message.into(), }
+        ParseError {
+            token: None,
+            message: message.into(),
+        }
     }
 }
 
 fn parse_garbage(tokens: &mut Peekable<Iter<Token>>) -> Result<Tree, ParseError> {
     match tokens.peek() {
-        None => Err(ParseError::end_of_input("Expected start of group, but no more tokens.")),
+        None => Err(ParseError::end_of_input(
+            "Expected start of group, but no more tokens.",
+        )),
         Some(&&GarbageStart) => {
             tokens.next();
             let mut members = Vec::new();
             loop {
                 match tokens.peek() {
                     None => {
-                        return Err(ParseError::end_of_input("Parsing group contents, but no more tokens."));
+                        return Err(ParseError::end_of_input(
+                            "Parsing group contents, but no more tokens.",
+                        ));
                     }
                     Some(&&GarbageEnd) => {
                         tokens.next();
                         break;
-                    },
+                    }
                     Some(&&Escape) => {
                         tokens.next();
                         tokens.next();
-                    },
+                    }
                     Some(_) => {
                         members.push(*tokens.next().unwrap());
                     }
                 }
             }
             Ok(Garbage { content: members })
-        },
-        Some(&&token) => Err(ParseError::wrong_token(token, "Expected start of garbage."))
+        }
+        Some(&&token) => Err(ParseError::wrong_token(token, "Expected start of garbage.")),
     }
 }
 
 fn parse_group(tokens: &mut Peekable<Iter<Token>>) -> Result<Tree, ParseError> {
-     match tokens.peek() {
-         None => Err(ParseError::end_of_input("Expected start of group, but no more tokens.")),
-         Some(&&GroupStart) => {
-             tokens.next();
-             let mut members = Vec::new();
+    match tokens.peek() {
+        None => Err(ParseError::end_of_input(
+            "Expected start of group, but no more tokens.",
+        )),
+        Some(&&GroupStart) => {
+            tokens.next();
+            let mut members = Vec::new();
 
-             loop {
-                 match tokens.peek() {
-                     None => {
-                         return Err(ParseError::end_of_input("Parsing group, but no more tokens."))
-                     },
-                     Some(&&GroupStart) => {
-                         let group = parse_group(tokens)?;
-                         members.push(group);
-                     },
-                     Some(&&Separator) => {
-                         tokens.next();
-                     },
-                     Some(&&GroupEnd) => {
-                         tokens.next();
-                         break;
-                     },
-                     Some(&&GarbageStart) => {
-                         let garbage = parse_garbage(tokens)?;
-                         members.push(garbage);
-                     }
-                     Some(&&token) => {
-                         return Err(ParseError::wrong_token(token, "Wrong token while parsing group contents."))
-                     }
-                 }
-             }
+            loop {
+                match tokens.peek() {
+                    None => {
+                        return Err(ParseError::end_of_input(
+                            "Parsing group, but no more tokens.",
+                        ))
+                    }
+                    Some(&&GroupStart) => {
+                        let group = parse_group(tokens)?;
+                        members.push(group);
+                    }
+                    Some(&&Separator) => {
+                        tokens.next();
+                    }
+                    Some(&&GroupEnd) => {
+                        tokens.next();
+                        break;
+                    }
+                    Some(&&GarbageStart) => {
+                        let garbage = parse_garbage(tokens)?;
+                        members.push(garbage);
+                    }
+                    Some(&&token) => {
+                        return Err(ParseError::wrong_token(
+                            token,
+                            "Wrong token while parsing group contents.",
+                        ))
+                    }
+                }
+            }
 
-             Ok(Group { content: members })
-         },
-         Some(&&GarbageStart) => {
-             parse_garbage(tokens)
-         }
-         Some(&&token) => Err(ParseError::wrong_token(token, "Expected start of group."))
-     }
+            Ok(Group { content: members })
+        }
+        Some(&&GarbageStart) => parse_garbage(tokens),
+        Some(&&token) => Err(ParseError::wrong_token(token, "Expected start of group.")),
+    }
 }
 
 fn parse(tokens: &mut Peekable<Iter<Token>>) -> Result<Tree, ParseError> {
@@ -162,12 +176,13 @@ fn parse(tokens: &mut Peekable<Iter<Token>>) -> Result<Tree, ParseError> {
 fn calculate_score(tree: &Tree) -> i32 {
     match *tree {
         Group { ref content } => {
-            let sub_tree_score: i32 = content.iter().map(|sub_tree| calculate_score(sub_tree)).sum();
+            let sub_tree_score: i32 = content
+                .iter()
+                .map(|sub_tree| calculate_score(sub_tree))
+                .sum();
             sub_tree_score
-        },
-        Garbage { ref content } => {
-            content.len() as i32
-        },
+        }
+        Garbage { ref content } => content.len() as i32,
     }
 }
 
@@ -176,7 +191,6 @@ fn run() -> Result<(), Error> {
 
     let mut token_iterator: Peekable<Iter<Token>> = tokens.iter().peekable();
     let tree = parse(&mut token_iterator)?;
-//    println!("Tree is {:?}", tree);
     let score = calculate_score(&tree);
 
     println!("{:?}", score);
