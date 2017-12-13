@@ -1,0 +1,10 @@
+[package]
+name = "day13-2"
+version = "0.1.0"
+authors = ["Mikael Zayenz Lagerkvist <zayenz@gmail.com>"]
+
+[dependencies]
+failure = "0.1.1"
+
+[dev-dependencies]
+assert_cli = "0.5"
