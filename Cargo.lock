@@ -1,4 +1,8 @@
 [[package]]
+name = "aoc2017"
+version = "0.1.0"
+
+[[package]]
 name = "assert_cli"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
