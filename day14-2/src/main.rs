@@ -1,14 +1,15 @@
+#![allow(dead_code)]
+#![allow(unknown_lints)]
+#![allow(needless_range_loop)]
+
 #[macro_use]
 extern crate failure;
 use failure::Error;
 
 use std::{io, process};
 use std::io::BufRead;
-use std::collections::HashMap;
-
 
 fn read_input() -> Result<String, Error> {
-    let mut input: HashMap<i32, i32> = HashMap::new();
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let line = line?;
@@ -107,7 +108,7 @@ impl Memory {
         for hash_part in self.hash() {
             result += hash_part.count_ones();
         }
-        return result;
+        result
     }
 
     fn hash(self) -> Vec<u8> {
@@ -119,7 +120,7 @@ impl Memory {
     }
 }
 
-fn hash(s: String) -> Vec<bool> {
+fn hash(s: &str) -> Vec<bool> {
     let mut region_widths: Vec<usize> = Vec::new();
     for ch in s.trim().chars() {
         region_widths.push(ch as usize)
@@ -160,7 +161,7 @@ fn run() -> Result<(), Error> {
     let mut counter = 1;
     for row in 0..128 {
         let row_key = format!("{}-{}", base_key, row);
-        let row_values = hash(row_key);
+        let row_values = hash(&row_key);
         for col in 0..128 {
             if row_values[col] {
                 grid[row][col] = counter;
