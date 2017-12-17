@@ -1,5 +1,4 @@
 [dependencies]
-
 [workspace]
 members = [
     "aoc2017",
@@ -35,5 +34,6 @@ members = [
     "day15-2",
     "day16-1",
     "day16-2",
+    "day17-1",
 ]
 
