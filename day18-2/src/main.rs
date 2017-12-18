@@ -11,10 +11,6 @@ use std::fmt;
 use std::ops::{Index, IndexMut};
 use std::collections::VecDeque;
 
-extern crate num;
-use num::{FromPrimitive, ToPrimitive, Zero};
-use num::bigint::BigInt;
-
 #[derive(Fail, Debug)]
 #[fail(display = "Not a valid name: {}.", _0)]
 struct NotValidName(char);
@@ -36,7 +32,7 @@ struct MissingTokens;
 struct TooLargeValue;
 
 
-type ValueType = BigInt;
+type ValueType = i64;
 
 const REGISTERS: usize = 26;
 
@@ -91,14 +87,14 @@ impl FromStr for RegisterId {
     }
 }
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 struct RegisterValue {
     value: ValueType,
 }
 
 impl RegisterValue {
     fn new() -> RegisterValue {
-        RegisterValue { value: BigInt::from(0) }
+        RegisterValue { value: 0 }
     }
 }
 
@@ -108,7 +104,7 @@ impl fmt::Display for RegisterValue {
     }
 }
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum Source {
     Register { id: RegisterId },
     Value { value: ValueType },
@@ -117,10 +113,10 @@ enum Source {
 use Source::*;
 
 impl Source {
-    fn value<'a>(&'a self, registers: &'a RegisterBank) -> &'a ValueType {
+    fn value(&self, registers: &RegisterBank) -> ValueType {
         match *self {
-            Source::Register { id } => &registers[id].value,
-            Source::Value { ref value } => value,
+            Source::Register { id } => registers[id].value,
+            Source::Value { value } => value,
         }
     }
 }
@@ -149,7 +145,7 @@ impl FromStr for Source {
 }
 
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum Instruction {
     Snd { source: Source },
     Set { target: RegisterId, source: Source },
@@ -249,7 +245,7 @@ impl RegisterBank {
         for _ in 0..REGISTERS {
             registers.push(RegisterValue::new())
         }
-        registers[RegisterId::from_name('p').unwrap().index()].value = BigInt::from(id);
+        registers[RegisterId::from_name('p').unwrap().index()].value = id as ValueType;
         RegisterBank { registers }
     }
 }
@@ -318,106 +314,83 @@ impl Program {
         self.input.push_back(input);
     }
 
-    fn step(&mut self) -> Result<Status, Error> {
+    fn step(&mut self) -> Status {
         assert!(self.pc < self.instructions.len());
         let instruction = &self.instructions[self.pc];
-        Ok(match *instruction {
-            Snd { ref source } => {
+        match *instruction {
+            Snd { source } => {
                 self.pc += 1;
                 self.sent_value += 1;
-                let value = source.value(&self.registers).clone();
+                let value = source.value(&self.registers);
                 Send {
                     source: self.id,
                     value,
                 }
             }
-            Set {
-                ref target,
-                ref source,
-            } => {
+            Set { target, source } => {
                 self.pc += 1;
-                let value = source.value(&self.registers).clone();
-                self.registers[*target].value = value;
+                let value = source.value(&self.registers);
+                self.registers[target].value = value;
                 SingleStep
             }
-            Add {
-                ref target,
-                ref source,
-            } => {
+            Add { target, source } => {
                 self.pc += 1;
-                let target_value = &self.registers[*target].value.clone();
-                let value = source.value(&self.registers).clone();
-                self.registers[*target].value = target_value + value;
+                let target_value = self.registers[target].value;
+                let value = source.value(&self.registers);
+                self.registers[target].value = target_value + value;
                 SingleStep
             }
-            Mul {
-                ref target,
-                ref source,
-            } => {
+            Mul { target, source } => {
                 self.pc += 1;
-                let target_value = &self.registers[*target].value.clone();
-                let value = source.value(&self.registers).clone();
-                self.registers[*target].value = target_value * value;
+                let target_value = self.registers[target].value;
+                let value = source.value(&self.registers);
+                self.registers[target].value = target_value * value;
                 SingleStep
             }
-            Mod {
-                ref target,
-                ref source,
-            } => {
+            Mod { target, source } => {
                 self.pc += 1;
-                let target_value = &self.registers[*target].value.clone();
-                let value = source.value(&self.registers).clone();
-                self.registers[*target].value = target_value % value;
+                let target_value = self.registers[target].value;
+                let value = source.value(&self.registers);
+                self.registers[target].value = target_value % value;
                 SingleStep
             }
-            Rcv { ref target } => {
+            Rcv { target } => {
                 if let Some(input) = self.input.pop_front() {
                     self.pc += 1;
-                    self.registers[*target].value = input;
+                    self.registers[target].value = input;
                     SingleStep
                 } else {
                     Waiting
                 }
             }
-            Jgz {
-                ref condition,
-                ref offset,
-            } => {
+            Jgz { condition, offset } => {
                 let condition = condition.value(&self.registers);
-                if *condition > BigInt::zero() {
-                    let offset = offset.value(&self.registers).to_isize().ok_or(
-                        TooLargeValue,
-                    )?;
-                    self.pc = (self.pc as isize + offset) as usize;
+                if condition > 0 {
+                    let offset = offset.value(&self.registers);
+                    self.pc = (self.pc as ValueType + offset) as usize;
                 } else {
                     self.pc += 1;
                 }
                 SingleStep
             }
-        })
+        }
     }
 }
 
 
 
 fn simulate(instructions: &[Instruction]) -> Result<Vec<Program>, Error> {
-    let mut programs = vec![
-        Program::new(0, instructions),
-        Program::new(1, instructions),
-    ];
+    let mut programs = vec![Program::new(0, instructions), Program::new(1, instructions)];
     loop {
-        let results = programs
-            .iter_mut()
-            .map(Program::step)
-            .collect::<Result<Vec<_>, _>>()?;
+        let results: Vec<Status> = programs.iter_mut().map(Program::step).collect();
         if results.iter().all(|s| *s == Waiting) {
             return Ok(programs);
         }
         for result in results {
-            if let Send { source, ref value } = result {
+            if let Send { source, value } = result {
                 for program in &mut programs {
                     if program.id != source {
-                        program.input(value.clone())
+                        program.input(value)
                     }
                 }
             }
