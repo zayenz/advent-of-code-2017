@@ -10,7 +10,6 @@ use std::{io, process};
 use std::io::BufRead;
 use std::str::FromStr;
 use std::str;
-use std::char;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum Cell {
@@ -21,6 +20,8 @@ enum Cell {
 }
 
 use Cell::*;
+
+impl Cell {}
 
 impl FromStr for Cell {
     type Err = Error;
@@ -130,7 +131,6 @@ fn get(grid: &[Vec<Cell>], pos: Position) -> Cell {
 
 fn run() -> Result<(), Error> {
     let grid = read_input()?;
-    let mut visited_letters = Vec::new();
     let entrance_column = grid[1]
         .iter()
         .enumerate()
@@ -139,13 +139,10 @@ fn run() -> Result<(), Error> {
         .unwrap();
     let mut pos = Position::position(1, entrance_column);
     let mut dir = Down;
+    let mut steps = 0;
     loop {
         let (next_pos, next_dir) = match get(&grid, pos) {
-            Letter(ch) => {
-                visited_letters.push(ch);
-                (pos.step(dir), dir)
-            }
-            Path => (pos.step(dir), dir),
+            Letter(_) | Path => (pos.step(dir), dir),
             Corner => {
                 let next_direction = *dir.lr()
                     .iter()
@@ -158,11 +155,12 @@ fn run() -> Result<(), Error> {
                 break;
             }
         };
+        steps += 1;
         pos = next_pos;
         dir = next_dir;
     }
-    let visited: String = visited_letters.iter().collect();
-    println!("{}", visited);
+
+    println!("{}", steps);
 
     Ok(())
 }
