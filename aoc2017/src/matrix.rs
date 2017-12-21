@@ -23,6 +23,9 @@ impl Matrix {
     pub fn count_true(&self) -> usize {
         self.data.iter().filter(|&&v| v).count()
     }
+    pub fn count_false(&self) -> usize {
+        self.data.iter().filter(|&&v| !v).count()
+    }
 
 
     fn pos(&self, x: usize, y: usize) -> usize {
@@ -44,11 +47,75 @@ impl Matrix {
         }
     }
 
+    pub fn fill_with(
+        &mut self,
+        start_x: usize,
+        start_y: usize,
+        width: usize,
+        height: usize,
+        value: bool,
+    ) {
+        for x_offset in 0..width {
+            for y_offset in 0..height {
+                self[(start_x + x_offset, start_y + y_offset)] = value;
+            }
+        }
+    }
+
+    pub fn fill_true(&mut self, start_x: usize, start_y: usize, width: usize, height: usize) {
+        self.fill_with(start_x, start_y, width, height, true);
+    }
+
+    pub fn fill_false(&mut self, start_x: usize, start_y: usize, width: usize, height: usize) {
+        self.fill_with(start_x, start_y, width, height, false);
+    }
+
     pub fn fill_from(&mut self, x: usize, y: usize, source: &Matrix) {
         for source_x in 0..source.width {
             for source_y in 0..source.height {
                 self[(x + source_x, y + source_y)] = source[(source_x, source_y)];
             }
+        }
+    }
+
+    pub fn invert(&mut self, start_x: usize, start_y: usize, width: usize, height: usize) {
+        for x_offset in 0..width {
+            for y_offset in 0..height {
+                let previous_value = self[(start_x + x_offset, start_y + y_offset)];
+                self[(start_x + x_offset, start_y + y_offset)] = !previous_value;
+            }
+        }
+    }
+
+    pub fn row(&self, y: usize) -> Matrix {
+        let mut result = Matrix::new(self.width, 1);
+        for x in 0..self.width {
+            result[(x, 1)] = self[(x, y)];
+        }
+        result
+    }
+
+    pub fn col(&self, x: usize) -> Matrix {
+        let mut result = Matrix::new(1, self.height);
+        for y in 0..self.height {
+            result[(1, y)] = self[(x, y)];
+        }
+        result
+    }
+
+    pub fn rotate_row(&mut self, y: usize, steps: usize) {
+        let row = self.row(y);
+        let rot_row: Vec<bool> = row.iter().cycle().skip(steps).take(self.width).collect();
+        for (offset, value) in rot_row.into_iter().enumerate() {
+            self[(offset, y)] = value;
+        }
+    }
+
+    pub fn rotate_col(&mut self, x: usize, steps: usize) {
+        let col = self.col(x);
+        let rot_col: Vec<bool> = col.iter().cycle().skip(steps).take(self.height).collect();
+        for (offset, value) in rot_col.into_iter().enumerate() {
+            self[(x, offset)] = value;
         }
     }
 
@@ -77,7 +144,43 @@ impl Matrix {
 
         result
     }
+
+    pub fn iter(&self) -> MatrixIterator {
+        self.into_iter()
+    }
 }
+
+impl<'a> IntoIterator for &'a Matrix {
+    type Item = bool;
+    type IntoIter = MatrixIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        MatrixIterator {
+            matrix: self,
+            index: 0,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct MatrixIterator<'a> {
+    matrix: &'a Matrix,
+    index: usize,
+}
+
+impl<'a> Iterator for MatrixIterator<'a> {
+    type Item = bool;
+    fn next(&mut self) -> Option<bool> {
+        if self.index < self.matrix.data.len() {
+            let result = self.matrix.data[self.index];
+            self.index += 1;
+            Some(result)
+        } else {
+            None
+        }
+    }
+}
+
 
 impl Index<(usize, usize)> for Matrix {
     type Output = bool;
