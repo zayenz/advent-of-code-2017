@@ -13,6 +13,10 @@ o: jnq g b 'q'
 p: set f 0
 q: sub e -1
 t: jnq e b 'l'
+inner1: set m b
+inner2: mod m d
+inner3: jnz m 'u'
+inner4: set f 0
 u: sub d -1
 x: jnq d b 'k'
 y: jnz f 'ac'

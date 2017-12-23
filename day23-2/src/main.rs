@@ -9,6 +9,7 @@ use std::io::BufRead;
 use std::str::FromStr;
 use std::fmt;
 use std::ops::{Index, IndexMut};
+use std::collections::HashMap;
 
 extern crate num;
 use num::{FromPrimitive, ToPrimitive, Zero, One};
@@ -157,15 +158,53 @@ impl FromStr for Source {
 
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+enum JumpTarget {
+    Offset { offset: isize },
+    Symbolic { label: String },
+}
+
+use JumpTarget::*;
+
+impl fmt::Display for JumpTarget {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Offset { offset } => write!(f, "{}", offset),
+            Symbolic { ref label } => write!(f, "symbolic({})", label),
+        }
+
+    }
+}
+
+impl FromStr for JumpTarget {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let name = s.trim();
+        Ok(if name.starts_with('\'') {
+            Symbolic { label: name.trim_matches('\'').to_string() }
+        } else {
+            Offset { offset: name.parse()? }
+        })
+    }
+}
+
+
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum Instruction {
-    Snd { source: RegisterId },
     Set { target: RegisterId, source: Source },
     Add { target: RegisterId, source: Source },
     Sub { target: RegisterId, source: Source },
     Mul { target: RegisterId, source: Source },
     Mod { target: RegisterId, source: Source },
-    Rcv { source: RegisterId },
-    Jnz { condition: Source, offset: Source },
+    Jnq {
+        condition1: Source,
+        condition2: Source,
+        offset: JumpTarget,
+    },
+    Jnz {
+        condition: Source,
+        offset: JumpTarget,
+    },
 }
 
 use Instruction::*;
@@ -173,7 +212,6 @@ use Instruction::*;
 impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Instruction::Snd { ref source } => write!(f, "snd {}", source),
             Instruction::Set {
                 ref target,
                 ref source,
@@ -194,7 +232,11 @@ impl fmt::Display for Instruction {
                 ref target,
                 ref source,
             } => write!(f, "mod {} {}", target, source),
-            Instruction::Rcv { ref source } => write!(f, "rcv {}", source),
+            Instruction::Jnq {
+                ref condition1,
+                ref condition2,
+                ref offset,
+            } => write!(f, "jnq {} {} {}", condition1, condition2, offset),
             Instruction::Jnz {
                 ref condition,
                 ref offset,
@@ -210,7 +252,6 @@ impl FromStr for Instruction {
         let mut words = s.split_whitespace();
         let instruction = words.next().ok_or(MissingTokens)?;
         Ok(match instruction {
-            "snd" => Snd { source: words.next().ok_or(MissingTokens)?.parse()? },
             "set" => Set {
                 target: words.next().ok_or(MissingTokens)?.parse()?,
                 source: words.next().ok_or(MissingTokens)?.parse()?,
@@ -231,7 +272,11 @@ impl FromStr for Instruction {
                 target: words.next().ok_or(MissingTokens)?.parse()?,
                 source: words.next().ok_or(MissingTokens)?.parse()?,
             },
-            "rcv" => Rcv { source: words.next().ok_or(MissingTokens)?.parse()? },
+            "jnq" => Jnq {
+                condition1: words.next().ok_or(MissingTokens)?.parse()?,
+                condition2: words.next().ok_or(MissingTokens)?.parse()?,
+                offset: words.next().ok_or(MissingTokens)?.parse()?,
+            },
             "jnz" => Jnz {
                 condition: words.next().ok_or(MissingTokens)?.parse()?,
                 offset: words.next().ok_or(MissingTokens)?.parse()?,
@@ -243,15 +288,77 @@ impl FromStr for Instruction {
 
 
 fn read_input() -> Result<Vec<Instruction>, Error> {
-    let mut input: Vec<Instruction> = Vec::new();
+    let mut symbolic_input: Vec<Instruction> = Vec::new();
     let stdin = io::stdin();
+    let mut line_count: isize = 0;
+    let mut name_list: HashMap<String, isize> = HashMap::new();
     for line in stdin.lock().lines() {
         let line = line?;
         if !line.is_empty() {
-            input.push(line.parse()?);
+            let mut parts = line.split(": ");
+            let first_part = parts.next().unwrap();
+            let instruction_string = if let Some(instruction) = parts.next() {
+                name_list.insert(first_part.to_string(), line_count);
+                instruction
+            } else {
+                first_part
+            };
+            let instruction: Instruction = instruction_string.parse()?;
+            symbolic_input.push(instruction);
+            line_count += 1;
         }
     }
-    Ok(input)
+
+    //    print_instructions(&symbolic_input);
+    let mut instructions: Vec<Instruction> = Vec::new();
+
+    for (current_line, instruction) in symbolic_input.iter().enumerate() {
+        match *instruction {
+            Instruction::Jnq {
+                ref condition1,
+                ref condition2,
+                ref offset,
+            } => {
+                if let Symbolic { label } = offset.clone() {
+                    let target_line = name_list[&label];
+                    instructions.push(Jnq {
+                        condition1: condition1.clone(),
+                        condition2: condition2.clone(),
+                        offset: Offset { offset: target_line - (current_line as isize) },
+                    });
+                } else {
+                    instructions.push(instruction.clone());
+                }
+            }
+            Instruction::Jnz {
+                ref condition,
+                ref offset,
+            } => {
+                if let Symbolic { label } = offset.clone() {
+                    let target_line = name_list[&label];
+                    instructions.push(Jnz {
+                        condition: condition.clone(),
+                        offset: Offset { offset: target_line - (current_line as isize) },
+                    });
+                } else {
+                    instructions.push(instruction.clone());
+                }
+            }
+            _ => {
+                instructions.push(instruction.clone());
+            }
+        }
+    }
+
+    //    print_instructions(&instructions);
+
+    Ok(instructions)
+}
+
+fn print_instructions(instructions: &[Instruction]) {
+    for (line_no, inst) in instructions.iter().enumerate() {
+        println!("{:2}: {}", line_no, inst);
+    }
 }
 
 
@@ -301,7 +408,7 @@ impl fmt::Display for RegisterBank {
 
 
 
-fn approximate_h(instructions: &[Instruction]) -> Result<ValueType, Error> {
+fn calculate_h(instructions: &[Instruction]) -> Result<ValueType, Error> {
     let mut registers = RegisterBank::new();
     let id_a = RegisterId::from_name('a')?;
     let id_h = RegisterId::from_name('h')?;
@@ -309,16 +416,9 @@ fn approximate_h(instructions: &[Instruction]) -> Result<ValueType, Error> {
     let mut pc: isize = 0;
     let instruction_count = instructions.len() as isize;
 
-    let mut h_last_value = registers[id_h].value.clone();
-    let mut steps_since_modification: usize = 0;
-
-    while 0 <= pc && pc < instruction_count && steps_since_modification < 100_000_000_000 {
+    while 0 <= pc && pc < instruction_count {
         let instruction = &instructions[pc as usize];
         match *instruction {
-            Instruction::Snd { ref source } => {
-                registers[*source].play_sound();
-                pc += 1;
-            }
             Instruction::Set {
                 ref target,
                 ref source,
@@ -363,39 +463,50 @@ fn approximate_h(instructions: &[Instruction]) -> Result<ValueType, Error> {
                 registers[*target].value = target_value % value;
                 pc += 1;
             }
-            Instruction::Rcv { ref source } => {
-                pc += 1;
+            Instruction::Jnq {
+                ref condition1,
+                ref condition2,
+                ref offset,
+            } => {
+                if let Offset { offset } = *offset {
+                    let condition1 = condition1.value(&registers);
+                    let condition2 = condition2.value(&registers);
+                    if condition1 != condition2 {
+                        pc = pc + offset;
+                    } else {
+                        pc += 1;
+                    }
+                } else {
+                    bail!("Trying to execute symbolic jump {}", offset)
+                }
             }
             Instruction::Jnz {
                 ref condition,
                 ref offset,
             } => {
-                let condition = condition.value(&registers);
-                if !condition.is_zero() {
-                    pc = pc + offset.value(&registers);
+                if let Offset { offset } = *offset {
+                    let condition = condition.value(&registers);
+                    if !condition.is_zero() {
+                        pc = pc + offset;
+                    } else {
+                        pc += 1;
+                    }
                 } else {
-                    pc += 1;
+                    bail!("Trying to execute symbolic jump {}", offset)
                 }
             }
         }
-
-        if registers[id_h].value != h_last_value {
-            h_last_value = registers[id_h].value.clone();
-            steps_since_modification = 0;
-        } else {
-            steps_since_modification += 1;
-        }
     }
 
-    Ok(h_last_value)
+    Ok(registers[id_h].value)
 }
 
 fn run() -> Result<(), Error> {
     let instructions = read_input()?;
 
-    let final_h_value = approximate_h(&instructions)?;
+    let h_value = calculate_h(&instructions)?;
 
-    println!("{}", final_h_value);
+    println!("{}", h_value);
 
     Ok(())
 }
